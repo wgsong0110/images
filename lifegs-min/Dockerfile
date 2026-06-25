@@ -27,7 +27,7 @@ ENV PATH="/opt/conda/bin:$PATH"
 # LifeGS conda env
 COPY environment.yml /tmp/environment.yml
 COPY requirements.txt /tmp/requirements.txt
-RUN cd /tmp && /opt/conda/bin/mamba env create -f /tmp/environment.yml -n LifeGS && \
+RUN cd /tmp && /opt/conda/bin/mamba env create -f /tmp/environment.yml -n LifeGS --channel-priority flexible && \
     /opt/conda/bin/mamba clean -afy && \
     rm -f /tmp/environment.yml /tmp/requirements.txt
 
