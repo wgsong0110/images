@@ -1,0 +1,40 @@
+name: Build lifegs-min image
+
+on:
+  push:
+    paths:
+      - 'lifegs-min/**'
+    branches: [master, main]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Free disk space
+        run: |
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc \
+            /usr/local/share/boost /opt/hostedtoolcache
+          sudo docker image prune -af
+
+      - name: Login to ghcr.io
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GHCR_TOKEN }}
+
+      - name: Build and push
+        run: |
+          TOOL=lifegs-min
+          docker build \
+            -f ${TOOL}/Dockerfile \
+            -t "ghcr.io/wgsong0110/${TOOL}:latest" \
+            ${TOOL}/
+          docker push "ghcr.io/wgsong0110/${TOOL}:latest"
