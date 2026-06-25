@@ -1,0 +1,7 @@
+name: ed3dgs
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - pip:
+    - -r requirements.txt
