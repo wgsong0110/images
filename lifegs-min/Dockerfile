@@ -7,7 +7,7 @@ ENV DEBIAN_FRONTEND=noninteractive
 # Minimal system: ssh (vast manages sshd) + git/tmux/curl, conda. No rvfs, no supervisord, no idle-watchdog.
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
-        openssh-server tmux curl git ca-certificates && \
+        openssh-server tmux curl git ca-certificates sudo && \
     curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg \
         -o /usr/share/keyrings/githubcli-archive-keyring.gpg && \
     echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" \
@@ -33,6 +33,7 @@ RUN cd /tmp && /opt/conda/bin/mamba env create -f /tmp/environment.yml -n LifeGS
 
 # wgsong user (UID 1000, matching host paths)
 RUN useradd -m -u 1000 -s /bin/bash wgsong && \
+    mkdir -p /etc/sudoers.d && \
     echo 'wgsong ALL=(ALL) NOPASSWD:ALL' > /etc/sudoers.d/wgsong && \
     mkdir -p /home/wgsong/.ssh && chmod 700 /home/wgsong/.ssh && \
     chown -R wgsong:wgsong /home/wgsong && \
