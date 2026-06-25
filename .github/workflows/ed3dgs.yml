@@ -31,7 +31,7 @@ jobs:
         id: meta
         run: |
           TOOL=ed3dgs
-          ENV_HASH=$(cat ${TOOL}/environment.yml ${TOOL}/requirements.txt 2>/dev/null | sha256sum | cut -c1-7)
+          ENV_HASH=$(cat ${TOOL}/Dockerfile ${TOOL}/requirements.txt 2>/dev/null | sha256sum | cut -c1-7)
           echo "hash=${ENV_HASH}" >> $GITHUB_OUTPUT
           echo "image=ghcr.io/${{ github.repository_owner }}/${TOOL}" >> $GITHUB_OUTPUT
           echo "tool=${TOOL}" >> $GITHUB_OUTPUT
@@ -52,26 +52,15 @@ jobs:
             echo "skip=false" >> $GITHUB_OUTPUT
           fi
 
-      - name: Get project Dockerfile
-        if: steps.check.outputs.skip != 'true'
-        env:
-          GH_TOKEN: ${{ secrets.GHCR_TOKEN }}
-        run: |
-          GH_TOKEN="$GH_TOKEN" gh api \
-            repos/wgsong0110/session-web/contents/Dockerfile.project \
-            -q '.content' | base64 -d > Dockerfile.project
-
       - name: Build and push
         if: steps.check.outputs.skip != 'true'
         run: |
           TOOL=ed3dgs
-          cp ${TOOL}/environment.yml environment.yml
-          cp ${TOOL}/requirements.txt requirements.txt
+          cp ${TOOL}/requirements.txt ${TOOL}/requirements.txt.bak
           docker build \
-            --build-arg PROJECT_NAME="${TOOL}" \
-            -f Dockerfile.project \
+            -f ${TOOL}/Dockerfile \
             -t "${{ steps.meta.outputs.image }}:${{ steps.meta.outputs.hash }}" \
             -t "${{ steps.meta.outputs.image }}:latest" \
-            .
+            ${TOOL}/
           docker push "${{ steps.meta.outputs.image }}:${{ steps.meta.outputs.hash }}"
           docker push "${{ steps.meta.outputs.image }}:latest"
