@@ -10,7 +10,7 @@ dependencies:
   - pytorch::pytorch-cuda=12.1
   - pytorch::torchvision=0.20.1
   - numpy<2
-  - scipy
+  - scipy<1.14
   - matplotlib
   - tqdm
   - pyyaml
