@@ -30,11 +30,15 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GHCR_TOKEN }}
 
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
       - name: Build and push
-        run: |
-          TOOL=lifegs
-          docker build \
-            -f ${TOOL}/Dockerfile \
-            -t "ghcr.io/wgsong0110/${TOOL}:latest" \
-            ${TOOL}/
-          docker push "ghcr.io/wgsong0110/${TOOL}:latest"
+        uses: docker/build-push-action@v6
+        with:
+          context: lifegs
+          file: lifegs/Dockerfile
+          push: true
+          tags: ghcr.io/wgsong0110/lifegs:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
