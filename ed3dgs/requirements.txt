@@ -1,8 +1,0 @@
-lpips
-plyfile
-pytorch-msssim
-open3d
-natsort
-kornia
-imageio
-imageio[ffmpeg]
