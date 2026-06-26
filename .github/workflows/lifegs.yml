@@ -1,9 +1,9 @@
-name: Build lifegs-min image
+name: Build lifegs image
 
 on:
   push:
     paths:
-      - 'lifegs-min/**'
+      - 'lifegs/**'
     branches: [master, main]
   workflow_dispatch:
 
@@ -32,7 +32,7 @@ jobs:
 
       - name: Build and push
         run: |
-          TOOL=lifegs-min
+          TOOL=lifegs
           docker build \
             -f ${TOOL}/Dockerfile \
             -t "ghcr.io/wgsong0110/${TOOL}:latest" \
