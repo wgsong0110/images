@@ -14,3 +14,5 @@ kornia
 fsspec
 aiohttp
 requests
+mmcv
+mmengine
