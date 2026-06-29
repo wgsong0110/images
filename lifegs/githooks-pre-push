@@ -1,0 +1,31 @@
+#!/bin/bash
+# Global git hook: auto-trigger CUDA build on push if .cu/.cuh/setup.py changed
+
+set -euo pipefail
+
+cd "$(git rev-parse --show-toplevel)" 2>/dev/null || exit 0
+
+[ -f .wexec.json ] || exit 0
+
+# Check if cuda_build config exists
+python3 -c "import json,sys; cfg=json.load(open('.wexec.json')); sys.exit(0 if cfg.get('cuda_build') else 1)" 2>/dev/null || exit 0
+
+# Check if any .cu/.cuh/setup.py changed in the commits being pushed
+while read local_ref local_sha remote_ref remote_sha; do
+    # If remote_sha is all zeros, this is a new branch
+    if [ "$remote_sha" = "0000000000000000000000000000000000000000" ]; then
+        base=$(git rev-parse "$local_sha^" 2>/dev/null || echo "")
+        [ -n "$base" ] && range="${base}..${local_sha}" || range="${local_sha}"
+    else
+        range="${remote_sha}..${local_sha}"
+    fi
+
+    changed=$(git diff --name-only "$range" 2>/dev/null | grep -E '\.(cu|cuh)$|setup\.py$' || true)
+    if [ -n "$changed" ]; then
+        echo "[hook] CUDA files changed — triggering build..."
+        wbuild trigger 2>&1 || echo "[hook] wbuild trigger failed (non-fatal)" >&2
+        break
+    fi
+done
+
+exit 0

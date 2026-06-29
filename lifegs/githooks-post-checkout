@@ -1,0 +1,65 @@
+#!/bin/bash
+# Global git hook: auto-download CUDA .so after checkout/clone
+# Installed via Dockerfile.run → git config --global core.hooksPath
+
+set -euo pipefail
+
+cd "$(git rev-parse --show-toplevel)" 2>/dev/null || exit 0
+
+[ -f .wexec.json ] || exit 0
+
+REPO=$(git remote get-url origin 2>/dev/null | sed 's|https://github.com/||;s|git@github.com:||;s|\.git$||')
+[ -n "$REPO" ] || exit 0
+
+# ── CUDA .so download (per-library) ──
+RELEASE_PREFIX=$(python3 -c "
+import json, sys
+cfg = json.load(open('.wexec.json'))
+cb = cfg.get('cuda_build', {})
+if not cb:
+    sys.exit(1)
+print(cb.get('release_tag', 'cuda-build'))
+" 2>/dev/null) && {
+    # Clean up old single-file hash if present
+    [ -f .cuda-hash ] && rm -f .cuda-hash
+
+    # Collect current CUDA library names
+    current_libs=""
+    for setup_py in $(find . -name 'setup.py' -not -path './.git/*' | sort); do
+        lib_dir=$(dirname "$setup_py")
+        cuda_files=$(find "$lib_dir" \( -name '*.cu' -o -name '*.cuh' \) 2>/dev/null | sort)
+        [ -z "$cuda_files" ] && continue
+
+        lib_name=$(basename "$lib_dir")
+        current_libs="$current_libs $lib_name"
+        lib_hash=$(echo "$cuda_files" | xargs sha256sum 2>/dev/null | sha256sum | cut -c1-7)
+        hash_file=".cuda-hash-${lib_name}"
+
+        if [ -f "$hash_file" ] && [ "$(cat "$hash_file")" = "$lib_hash" ]; then
+            continue
+        fi
+
+        tag="${RELEASE_PREFIX}-${lib_name}-${lib_hash}"
+        echo "[hook] downloading CUDA: ${lib_name} (${tag})..."
+        if gh release download "$tag" --repo "$REPO" --pattern "${lib_name}.tar.gz" --dir /tmp --clobber 2>/dev/null; then
+            tar xzf "/tmp/${lib_name}.tar.gz" 2>/dev/null && echo "[hook] ${lib_name} .so extracted"
+            rm -f "/tmp/${lib_name}.tar.gz"
+            echo "$lib_hash" > "$hash_file"
+        else
+            echo "[hook] CUDA release ${tag} not found — run wbuild trigger" >&2
+        fi
+    done
+
+    # Clean up orphaned libraries from split/merge/rename
+    for hash_file in .cuda-hash-*; do
+        [ -f "$hash_file" ] || continue
+        old_lib="${hash_file#.cuda-hash-}"
+        if ! echo "$current_libs" | grep -qw "$old_lib"; then
+            echo "[hook] cleanup: removing orphaned ${old_lib}"
+            rm -f "$hash_file"
+            # Remove leftover .so files (untracked, survived git pull)
+            find . -path "*/${old_lib}/*.so" -not -path './.git/*' -delete 2>/dev/null
+        fi
+    done
+}
+
