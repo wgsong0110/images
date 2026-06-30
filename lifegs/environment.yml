@@ -15,6 +15,7 @@ dependencies:
   - tqdm
   - pyyaml
   - pillow
+  - conda-forge::colmap
   - pip
   - pip:
     - -r requirements.txt
