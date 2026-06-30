@@ -15,7 +15,6 @@ dependencies:
   - tqdm
   - pyyaml
   - pillow
-  - conda-forge::colmap=*=cuda*  # CUDA-enabled prebuilt (GPU patch_match_stereo); no compile needed
   - pip
   - pip:
     - -r requirements.txt

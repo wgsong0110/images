@@ -34,6 +34,13 @@ RUN cd /tmp && /opt/conda/bin/mamba env create -f /tmp/environment.yml -n LifeGS
     /opt/conda/bin/mamba clean -afy && \
     rm -f /tmp/environment.yml /tmp/requirements.txt
 
+# Separate colmap env (CUDA-enabled, prebuilt). Kept apart from LifeGS because the
+# CUDA colmap needs cuda-cudart>=12.6 which conflicts with pytorch-cuda=12.1.
+# COLMAP is a standalone binary (RPATH-linked), so it runs fine from its own env.
+# Pin 3.13.0: colmap 4.x has a broken faiss dependency (libfaiss.so not pulled in).
+RUN /opt/conda/bin/mamba create -n colmap -c conda-forge 'colmap=3.13.0=*cuda*' -y && \
+    /opt/conda/bin/mamba clean -afy
+
 # git hooks: auto-download CUDA .so on pull/checkout
 COPY githooks-post-merge /opt/githooks/post-merge
 COPY githooks-post-checkout /opt/githooks/post-checkout
