@@ -15,3 +15,4 @@ fsspec
 aiohttp
 requests
 mmengine
+faiss-gpu-cu12
